@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Transaction;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -136,6 +138,142 @@ class AuthController extends Controller
                 'user' => $user,
                 'avatar_url' => $user->avatar ? url($user->avatar) : null
             ]
+        ]);
+    }
+
+    // ============= PENGGUNA TRANSACTION METHODS =============
+    
+    public function getPenggunaTransactions(Request $request)
+    {
+        $transactions = Transaction::with([
+            'box.items.category',
+            'pengepul:id,name,email,phone'
+        ])
+            ->where('pengguna_id', $request->user()->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return response()->json([
+            'success' => true,
+            'data' => $transactions
+        ]);
+    }
+
+    public function acceptTransaction(Request $request, $id)
+    {
+        $transaction = Transaction::where('pengguna_id', $request->user()->id)
+            ->find($id);
+
+        if (!$transaction) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan'
+            ], 404);
+        }
+
+        if ($transaction->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi harus dalam status pending'
+            ], 400);
+        }
+
+        $transaction->update([
+            'status' => 'accepted',
+            'accepted_at' => now(),
+        ]);
+
+        // Create notification for pengepul
+        Notification::create([
+            'user_id' => $transaction->pengepul_id,
+            'title' => 'Transaksi Diterima',
+            'message' => 'Pengguna menerima penawaran Anda',
+            'type' => 'success',
+            'data' => [
+                'transaction_id' => $transaction->id,
+            ]
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transaksi berhasil diterima',
+            'data' => $transaction
+        ]);
+    }
+
+    public function rejectTransaction(Request $request, $id)
+    {
+        $transaction = Transaction::where('pengguna_id', $request->user()->id)
+            ->find($id);
+
+        if (!$transaction) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan'
+            ], 404);
+        }
+
+        if ($transaction->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi harus dalam status pending'
+            ], 400);
+        }
+
+        $transaction->update([
+            'status' => 'rejected',
+        ]);
+
+        // Create notification for pengepul
+        Notification::create([
+            'user_id' => $transaction->pengepul_id,
+            'title' => 'Transaksi Ditolak',
+            'message' => 'Pengguna menolak penawaran Anda',
+            'type' => 'warning',
+            'data' => [
+                'transaction_id' => $transaction->id,
+            ]
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transaksi berhasil ditolak',
+            'data' => $transaction
+        ]);
+    }
+
+    // ============= NOTIFICATION METHODS =============
+    
+    public function getMyNotifications(Request $request)
+    {
+        $notifications = Notification::where('user_id', $request->user()->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return response()->json([
+            'success' => true,
+            'data' => $notifications
+        ]);
+    }
+
+    public function markNotificationAsRead(Request $request, $id)
+    {
+        $notification = Notification::where('user_id', $request->user()->id)
+            ->find($id);
+
+        if (!$notification) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Notifikasi tidak ditemukan'
+            ], 404);
+        }
+
+        $notification->markAsRead();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notifikasi ditandai sebagai dibaca',
+            'data' => $notification
         ]);
     }
 }

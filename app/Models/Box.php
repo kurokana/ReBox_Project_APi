@@ -20,4 +20,9 @@ class Box extends Model
     {
         return $this->hasMany(Item::class);
     }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
 }

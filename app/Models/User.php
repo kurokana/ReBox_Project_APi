@@ -21,9 +21,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
         'avatar',
         'phone',
         'bio',
+        'address',
+        'balance',
     ];
 
     /**
@@ -52,5 +55,40 @@ class User extends Authenticatable
     public function boxes()
     {
         return $this->hasMany(Box::class);
+    }
+
+    // Transactions where user is seller (pengguna)
+    public function salesTransactions()
+    {
+        return $this->hasMany(Transaction::class, 'pengguna_id');
+    }
+
+    // Transactions where user is collector (pengepul)
+    public function collectorTransactions()
+    {
+        return $this->hasMany(Transaction::class, 'pengepul_id');
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    // Check if user is admin
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    // Check if user is pengepul
+    public function isPengepul()
+    {
+        return $this->role === 'pengepul';
+    }
+
+    // Check if user is pengguna
+    public function isPengguna()
+    {
+        return $this->role === 'pengguna';
     }
 }

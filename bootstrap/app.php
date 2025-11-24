@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
+
+        // Register custom middleware aliases
+        $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class,
+        ]);
         
         // Handle unauthenticated API requests
         $middleware->redirectGuestsTo(function ($request) {
