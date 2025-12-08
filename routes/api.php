@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\PengepulController;
+use App\Http\Controllers\Api\WasteSaleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +32,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('boxes', BoxController::class);
     Route::apiResource('items', ItemController::class);
     Route::apiResource('categories', CategoryController::class);
+
+    // ============= WASTE SALES ROUTES =============
+    Route::prefix('waste-sales')->group(function () {
+        Route::get('/', [WasteSaleController::class, 'index']);
+        Route::post('/', [WasteSaleController::class, 'store']);
+        Route::get('/{id}', [WasteSaleController::class, 'show']);
+        Route::delete('/{id}', [WasteSaleController::class, 'destroy']);
+        
+        // Admin only routes
+        Route::middleware('role:admin')->group(function () {
+            Route::put('/{id}/status', [WasteSaleController::class, 'updateStatus']);
+            Route::get('/statistics/summary', [WasteSaleController::class, 'statistics']);
+        });
+    });
 
     // ============= ADMIN ROUTES =============
     Route::middleware('role:admin')->prefix('admin')->group(function () {

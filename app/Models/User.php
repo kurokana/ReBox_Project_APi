@@ -74,6 +74,11 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class);
     }
 
+    public function wasteSales()
+    {
+        return $this->hasMany(WasteSale::class);
+    }
+
     // Check if user is admin
     public function isAdmin()
     {
